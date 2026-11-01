@@ -43,3 +43,37 @@ jobs:
           name: jacoco-coverage-report
           path: target/site/jacoco/
           if-no-files-found: warn
+
+  deploy:
+    name: Deploy JaCoCo report to GitHub Pages
+    needs: build
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    concurrency:
+      group: pages
+      cancel-in-progress: false
+    steps:
+      - name: Download JaCoCo report artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: jacoco-coverage-report
+          path: target/site/jacoco
+
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload JaCoCo report as Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: target/site/jacoco
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
